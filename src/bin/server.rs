@@ -42,6 +42,8 @@ fn handle_client(args: Arc<Args>, stream: TcpStream, map: Arc<RwLock<TreeMap<Str
     let reader = BufReader::new(&stream);
     let mut lines = reader.lines();
     let mut response = String::new();
+    let mut log_file = File::options().append(true).create(true).open(&args.logfile).unwrap();
+    let mut log_entries = String::new();
     while let Some(Ok(line)) = lines.next() {
         let parts: Vec<&str> = line.trim_end().splitn(3, ' ').collect();
         match parts[0] {
@@ -55,22 +57,14 @@ fn handle_client(args: Arc<Args>, stream: TcpStream, map: Arc<RwLock<TreeMap<Str
             "SET" if parts.len() == 3 => {
                 let mut map = map.write().unwrap();
                 map.insert(parts[1].to_string(), parts[2].to_string());
-                if !args.memonly {
-                    if let Err(e) = map.save_to_file(&args.dbfile) {
-                        eprintln!("Failed to save DB: {}", e);
-                    }
-                }
                 response.push_str("OK\r\n");
+                log_entries.push_str(&line);
             }
             "REMOVE" if parts.len() == 2 => {
                 let mut map = map.write().unwrap();
                 response.push_str(match map.remove(&parts[1].to_string()) {
                     Some(_) => {
-                        if !args.memonly {
-                            if let Err(e) = map.save_to_file(&args.dbfile) {
-                                eprintln!("Failed to save DB: {}", e);
-                            }
-                        }
+                        log_entries.push_str(&line);
                         "OK\r\n"
                     }
                     None => "ERR NotFound\r\n",
@@ -97,6 +91,12 @@ fn handle_client(args: Arc<Args>, stream: TcpStream, map: Arc<RwLock<TreeMap<Str
             // This is a handy special command to help with profiling the server. Would 
             // not recommend having a command like this in your typical key-value store!
         };
+    }
+
+    if !log_entries.is_empty(){
+        if let Err(e) =  log_file.write_all(log_entries.as_bytes()){
+            eprintln!("Failed to write to logfile: {}", e)
+        }
     }
 }
 
