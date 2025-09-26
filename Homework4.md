@@ -95,7 +95,7 @@ On server startup, the template code already first re-does all the requests in t
     - The number of write calls compared to hw3 is the same (1 write call per mutable operation), but the size of the buffer is much smaller and the duration of that call is much smaller
 - [x] for even better performance, write the log to disk only once per batch*. 
     - I think this only works because it's single threaded
-- [ ] many database systems and file servers use a separate, faster device for logging. Try putting the log on our fast "device" ``/tmp/``. 
+- [x] many database systems and file servers use a separate, faster device for logging. Try putting the log on our fast "device" ``/tmp/``. 
 
 ** Note: this all works nicely for application crashes. In the event of power failure, updates may still be lost. To prevent that, you'll need to use the ``fsync`` system call, or close the file. These are both fairly expensive, and out of scope for this assignment. **
 
@@ -111,7 +111,7 @@ To zero out an open log file, use both Seek::rewind(), and File::set_len(0) toge
     - If it is *not* passable as such, the autograding script **will fail and give you a 0**
 - [ ] Observe the throughput achieved for snapshot intervals ranging from 10 requests to 10000 requests
 - [ ] Observe the mean and tail latency for snapshot intervals ranging from 10 requests to 10000 requests
--  ] What do you notice about the relationship between mean latency and throughput? 
+- [ ] What do you notice about the relationship between mean latency and throughput? 
 - [ ] Is there a similar relationship between tail latency and throughput?
 - [ ] Measure mean/tail latency over batch size. 
 
