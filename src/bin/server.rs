@@ -31,9 +31,8 @@ impl Log {
         self.buf.push_str(line.as_ref());
         self.buf.push_str("\r\n");
         self.size += 1;
-        self.maybe_snapshot().expect("Snapshot failed");
     }
-    pub fn flush(&mut self) -> std::io::Result<()> {
+    fn flush(&mut self) -> std::io::Result<()> {
         if !self.buf.is_empty() {
             let res = self.file.write_all(self.buf.as_bytes());
             self.buf.clear();
@@ -44,7 +43,7 @@ impl Log {
         }
     }
     fn maybe_snapshot(&mut self) -> std::io::Result<()> {
-        if self.size > self.snapshot_interval {
+        if self.size >=  self.snapshot_interval {
             self.write_snapshot()?;
         }
         Ok(())
@@ -55,6 +54,11 @@ impl Log {
         self.file.rewind()?;
         self.size = 0;
         Ok(())
+    }
+}
+impl Drop for Log {
+    fn drop(&mut self) {
+        self.flush().expect("flush failed");
     }
 }
 
@@ -145,9 +149,7 @@ fn handle_client(
               // not recommend having a command like this in your typical key-value store!
         };
     }
-    if let Err(e) = log.write().unwrap().flush() {
-        eprintln!("Failed to write to logfile: {}", e)
-    }
+    log.write().unwrap().flush().expect("flush failed");
 }
 
 fn recover_from_log(map: &mut TreeMap<String, String>, log: File) {
